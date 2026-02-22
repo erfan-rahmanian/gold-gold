@@ -1,0 +1,1159 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>سیستم حسابداری طلا</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800&display=swap');
+
+:root {
+  --gold: #C9A84C;
+  --gold-light: #E8C97A;
+  --gold-dark: #9A7A2E;
+  --green: #4CAF7C;
+  --red: #E05555;
+  --blue: #5A9FD4;
+  --purple: #9B7FD4;
+}
+
+/* DARK THEME (default) */
+body.dark {
+  --bg: #0D0D0D;
+  --surface: #161616;
+  --surface2: #1E1E1E;
+  --surface3: #272727;
+  --border: #2E2E2E;
+  --text: #F0EDE8;
+  --text-muted: #888;
+  --header-bg: linear-gradient(135deg, #1a1400 0%, #0D0D0D 60%);
+  --nav-bg: #161616;
+  --input-bg: #1E1E1E;
+  --shadow: rgba(0,0,0,0.5);
+}
+
+/* LIGHT THEME */
+body.light {
+  --bg: #F5F3EE;
+  --surface: #FFFFFF;
+  --surface2: #F0EDE5;
+  --surface3: #E8E4DA;
+  --border: #DDD8CC;
+  --text: #1A1610;
+  --text-muted: #7A7060;
+  --header-bg: linear-gradient(135deg, #3D2E00 0%, #2A1F00 100%);
+  --nav-bg: #FFFFFF;
+  --input-bg: #F0EDE5;
+  --shadow: rgba(0,0,0,0.1);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  font-family: 'Vazirmatn', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  font-size: 14px;
+  transition: background 0.2s, color 0.2s;
+}
+
+/* HEADER */
+.header {
+  background: var(--header-bg);
+  border-bottom: 1px solid var(--gold-dark);
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.header-logo { display: flex; align-items: center; gap: 10px; }
+.logo-icon {
+  width: 36px; height: 36px;
+  background: linear-gradient(135deg, var(--gold), var(--gold-dark));
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px;
+}
+.header h1 { font-size: 15px; font-weight: 700; color: var(--gold-light); }
+.header-actions { display: flex; gap: 6px; align-items: center; }
+
+/* THEME TOGGLE */
+.theme-toggle {
+  width: 36px; height: 36px;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.15);
+  background: rgba(255,255,255,0.07);
+  color: var(--gold-light);
+  font-size: 16px;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.2s;
+}
+.theme-toggle:hover { background: rgba(255,255,255,0.15); }
+
+/* NAV */
+.nav {
+  display: flex;
+  overflow-x: auto;
+  background: var(--nav-bg);
+  border-bottom: 1px solid var(--border);
+  scrollbar-width: none;
+}
+.nav::-webkit-scrollbar { display: none; }
+.nav-btn {
+  flex-shrink: 0;
+  padding: 11px 16px;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-family: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+.nav-btn.active { color: var(--gold-light); border-bottom-color: var(--gold); background: rgba(201,168,76,0.05); }
+.nav-btn:hover:not(.active) { color: var(--text); }
+
+/* MAIN */
+.main { padding: 16px; max-width: 800px; margin: 0 auto; }
+.page { display: none; }
+.page.active { display: block; }
+
+/* CARDS */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 12px;
+}
+
+.stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+.stat-card {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 12px;
+}
+.stat-label { font-size: 11px; color: var(--text-muted); margin-bottom: 6px; }
+.stat-value { font-size: 16px; font-weight: 700; }
+.stat-value.gold-c { color: var(--gold-light); }
+.stat-value.green { color: var(--green); }
+.stat-value.red { color: var(--red); }
+.stat-value.blue { color: var(--blue); }
+
+/* FILTERS */
+.filter-bar { display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; }
+.filter-select, .filter-input {
+  background: var(--input-bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  font-family: inherit;
+  font-size: 12px;
+  padding: 8px 10px;
+  flex: 1;
+  min-width: 120px;
+}
+.filter-select:focus, .filter-input:focus { outline: none; border-color: var(--gold-dark); }
+
+/* TABLE */
+.table-wrapper { overflow-x: auto; border-radius: 10px; border: 1px solid var(--border); }
+table { width: 100%; border-collapse: collapse; min-width: 700px; font-size: 12px; }
+thead { background: var(--surface2); }
+th {
+  padding: 10px 12px;
+  text-align: right;
+  font-weight: 600;
+  color: var(--gold-light);
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+td { padding: 9px 12px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: rgba(201,168,76,0.03); }
+
+.badge {
+  display: inline-flex; align-items: center;
+  padding: 2px 8px; border-radius: 100px;
+  font-size: 11px; font-weight: 600;
+}
+.badge-buy  { background: rgba(76,175,124,0.15); color: var(--green); }
+.badge-sell { background: rgba(224,85,85,0.15); color: var(--red); }
+.badge-recv { background: rgba(90,159,212,0.15); color: var(--blue); }
+.badge-pay  { background: rgba(155,127,212,0.15); color: var(--purple); }
+.badge-doc  { background: rgba(201,168,76,0.15); color: var(--gold-light); }
+
+/* BUTTONS */
+.btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 9px 14px; border-radius: 8px; border: none;
+  font-family: inherit; font-size: 13px; font-weight: 600;
+  cursor: pointer; transition: all 0.2s;
+}
+.btn-primary { background: linear-gradient(135deg, var(--gold), var(--gold-dark)); color: #000; }
+.btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
+.btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text-muted); }
+.btn-outline:hover { border-color: var(--gold-dark); color: var(--gold-light); }
+.btn-danger { background: rgba(224,85,85,0.1); border: 1px solid rgba(224,85,85,0.3); color: var(--red); }
+.btn-danger:hover { background: rgba(224,85,85,0.2); }
+.btn-sm { padding: 5px 10px; font-size: 11px; border-radius: 6px; }
+
+/* FORM */
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+@media (max-width: 480px) { .form-grid { grid-template-columns: 1fr; } }
+.form-group { display: flex; flex-direction: column; gap: 5px; }
+.form-group.full { grid-column: 1 / -1; }
+.form-label { font-size: 12px; color: var(--text-muted); }
+.form-input, .form-select, .form-textarea {
+  background: var(--input-bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  font-family: inherit;
+  font-size: 13px;
+  padding: 10px 12px;
+}
+.form-input:focus, .form-select:focus, .form-textarea:focus { outline: none; border-color: var(--gold); }
+.form-textarea { resize: vertical; min-height: 70px; }
+
+/* MODAL */
+.modal-overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,0.75); z-index: 200;
+  align-items: flex-end; justify-content: center;
+}
+.modal-overlay.open { display: flex; }
+.modal {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px 16px 0 0;
+  padding: 20px 16px;
+  width: 100%; max-width: 600px; max-height: 90vh;
+  overflow-y: auto;
+  animation: slideUp 0.25s ease;
+}
+@keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+.modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+.modal-title { font-size: 15px; font-weight: 700; color: var(--gold-light); }
+.modal-close {
+  background: var(--surface3); border: none; color: var(--text-muted);
+  width: 30px; height: 30px; border-radius: 50%; cursor: pointer;
+  font-size: 16px; display: flex; align-items: center; justify-content: center;
+}
+.modal-close:hover { color: var(--text); }
+
+/* CONFIRM MODAL */
+.confirm-overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,0.8); z-index: 300;
+  align-items: center; justify-content: center;
+}
+.confirm-overlay.open { display: flex; }
+.confirm-box {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 24px 20px;
+  width: 90%; max-width: 340px;
+  text-align: center;
+}
+.confirm-icon { font-size: 36px; margin-bottom: 12px; }
+.confirm-title { font-size: 15px; font-weight: 700; margin-bottom: 8px; }
+.confirm-msg { font-size: 13px; color: var(--text-muted); margin-bottom: 20px; line-height: 1.6; }
+.confirm-btns { display: flex; gap: 10px; }
+
+/* SECTION TITLE */
+.section-title {
+  font-size: 13px; font-weight: 700; color: var(--gold-light);
+  margin-bottom: 12px; display: flex; align-items: center; gap: 8px;
+}
+.section-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+/* IMPORT AREA */
+.import-area {
+  border: 2px dashed var(--border); border-radius: 12px;
+  padding: 30px; text-align: center; cursor: pointer;
+  transition: all 0.2s; margin-bottom: 16px;
+}
+.import-area:hover, .import-area.drag { border-color: var(--gold-dark); background: rgba(201,168,76,0.04); }
+.import-icon { font-size: 36px; margin-bottom: 8px; }
+.import-title { font-size: 14px; font-weight: 600; color: var(--text-muted); }
+.import-sub { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+
+/* PERSON CARD */
+.person-card {
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 10px; padding: 14px; margin-bottom: 10px;
+  transition: all 0.2s;
+}
+.person-card:hover { border-color: var(--gold-dark); }
+.person-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+.person-name { font-size: 14px; font-weight: 700; }
+.person-shop { font-size: 11px; color: var(--gold-light); background: rgba(201,168,76,0.1); padding: 2px 8px; border-radius: 20px; }
+.person-stats { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+.person-stat { text-align: center; }
+.person-stat-label { font-size: 10px; color: var(--text-muted); margin-bottom: 2px; }
+.person-stat-value { font-size: 12px; font-weight: 700; }
+
+.empty-state { text-align: center; padding: 40px 20px; color: var(--text-muted); }
+.empty-icon { font-size: 40px; margin-bottom: 12px; }
+
+.positive { color: var(--green); }
+.negative { color: var(--red); }
+
+/* TOAST */
+.toast {
+  position: fixed; bottom: 24px; left: 50%;
+  transform: translateX(-50%);
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 10px; padding: 12px 20px; font-size: 13px; z-index: 1000;
+  animation: toastIn 0.3s ease, toastOut 0.3s ease 2.5s forwards;
+  white-space: nowrap; box-shadow: 0 4px 20px var(--shadow);
+  pointer-events: none;
+}
+@keyframes toastIn { from { opacity:0; transform: translateX(-50%) translateY(20px); } to { opacity:1; transform: translateX(-50%) translateY(0); } }
+@keyframes toastOut { to { opacity:0; transform: translateX(-50%) translateY(20px); } }
+
+input[type="file"] { display: none; }
+
+.text-muted { color: var(--text-muted); font-size: 12px; }
+.mb-12 { margin-bottom: 12px; }
+
+.summary-table { width: 100%; border-collapse: collapse; }
+.summary-table td { padding: 8px 12px; border-bottom: 1px solid var(--border); font-size: 13px; }
+.summary-table td:first-child { color: var(--text-muted); }
+.summary-table td:last-child { text-align: left; font-weight: 600; }
+</style>
+</head>
+<body class="dark">
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-logo">
+    <div class="logo-icon">🏅</div>
+    <div><h1>حسابداری طلا</h1></div>
+  </div>
+  <div class="header-actions">
+    <button class="theme-toggle" id="theme-btn" onclick="toggleTheme()" title="تغییر تم">🌙</button>
+    <button class="btn btn-outline btn-sm" onclick="exportExcel()">📥 خروجی</button>
+    <button class="btn btn-primary btn-sm" onclick="openAddModal()">+ ثبت</button>
+  </div>
+</div>
+
+<!-- NAV -->
+<div class="nav">
+  <button class="nav-btn active" data-page="dashboard" onclick="showPage('dashboard', this)">📊 داشبورد</button>
+  <button class="nav-btn" data-page="transactions" onclick="showPage('transactions', this)">📋 تراکنش‌ها</button>
+  <button class="nav-btn" data-page="persons" onclick="showPage('persons', this)">👥 اشخاص</button>
+  <button class="nav-btn" data-page="shops" onclick="showPage('shops', this)">🏪 مغازه‌ها</button>
+  <button class="nav-btn" data-page="import" onclick="showPage('import', this)">📤 ورود داده</button>
+</div>
+
+<div class="main">
+
+  <!-- DASHBOARD -->
+  <div class="page active" id="page-dashboard">
+    <div class="section-title">خلاصه کل</div>
+    <div class="stats-grid" id="overview-stats"></div>
+    <div class="section-title">به تفکیک مغازه</div>
+    <div id="shop-cards"></div>
+  </div>
+
+  <!-- TRANSACTIONS -->
+  <div class="page" id="page-transactions">
+    <div class="filter-bar">
+      <select class="filter-select" id="filter-shop" onchange="renderTransactions()">
+        <option value="">همه مغازه‌ها</option>
+      </select>
+      <select class="filter-select" id="filter-person" onchange="renderTransactions()">
+        <option value="">همه اشخاص</option>
+      </select>
+      <select class="filter-select" id="filter-type" onchange="renderTransactions()">
+        <option value="">همه انواع</option>
+        <option value="خرید">خرید</option>
+        <option value="فروش">فروش</option>
+        <option value="دریافت">دریافت</option>
+        <option value="پرداخت">پرداخت</option>
+        <option value="سند حسابداری">سند حسابداری</option>
+      </select>
+    </div>
+    <div class="text-muted mb-12" id="tx-count"></div>
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th>تاریخ</th>
+            <th>مغازه</th>
+            <th>نوع</th>
+            <th>شخص</th>
+            <th>توضیح</th>
+            <th>طلا بد</th>
+            <th>طلا خوب</th>
+            <th>ریال بد</th>
+            <th>ریال خوب</th>
+            <th>سود/زیان</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="tx-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- PERSONS -->
+  <div class="page" id="page-persons">
+    <div class="filter-bar">
+      <select class="filter-select" id="filter-person-shop" onchange="renderPersons()">
+        <option value="">همه مغازه‌ها</option>
+      </select>
+      <input class="filter-input" id="filter-person-search" placeholder="جستجوی شخص..." oninput="renderPersons()">
+    </div>
+    <div id="persons-list"></div>
+  </div>
+
+  <!-- SHOPS -->
+  <div class="page" id="page-shops">
+    <div id="shops-detail"></div>
+  </div>
+
+  <!-- IMPORT -->
+  <div class="page" id="page-import">
+    <div class="card" style="margin-bottom:16px">
+      <div class="section-title">وارد کردن فایل اکسل</div>
+      <div class="import-area" id="import-area" onclick="document.getElementById('file-input').click()"
+           ondragover="event.preventDefault(); this.classList.add('drag')"
+           ondragleave="this.classList.remove('drag')"
+           ondrop="handleDrop(event)">
+        <div class="import-icon">📂</div>
+        <div class="import-title">فایل اکسل را انتخاب یا اینجا بکشید</div>
+        <div class="import-sub">فرمت xlsx. پشتیبانی می‌شود</div>
+      </div>
+      <input type="file" id="file-input" accept=".xlsx,.xls" onchange="handleFileInput(event)">
+      <div class="form-group" style="margin-bottom:12px">
+        <label class="form-label">نام مغازه (اگر در فایل نباشد)</label>
+        <input class="form-input" id="import-shop" placeholder="نام مغازه را وارد کنید">
+      </div>
+      <div class="form-group">
+        <label class="form-label">رفتار با داده‌های تکراری</label>
+        <select class="form-select" id="import-dup">
+          <option value="skip">نادیده گرفتن تکراری‌ها (پیشنهادی)</option>
+          <option value="replace">جایگزین کردن</option>
+          <option value="add">همه را اضافه کن</option>
+        </select>
+      </div>
+    </div>
+
+    <div id="import-preview" style="display:none">
+      <div class="section-title">پیش‌نمایش</div>
+      <div class="card" id="import-summary"></div>
+      <button class="btn btn-primary" style="width:100%;margin-bottom:16px" onclick="confirmImport()">✅ وارد کردن داده‌ها</button>
+    </div>
+
+    <div>
+      <div class="section-title">پشتیبان‌گیری و مدیریت</div>
+      <div style="display:flex; gap:10px; flex-wrap:wrap">
+        <button class="btn btn-outline" onclick="exportExcel()" style="flex:1">📥 خروجی اکسل کامل</button>
+        <button class="btn btn-danger" onclick="askClearAll()" style="flex:1">🗑️ پاک کردن همه داده‌ها</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ADD/EDIT MODAL -->
+<div class="modal-overlay" id="add-modal" onclick="if(event.target===this) closeModal()">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="modal-title">ثبت تراکنش جدید</div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="form-grid">
+      <div class="form-group">
+        <label class="form-label">نوع تراکنش *</label>
+        <select class="form-select" id="inp-type">
+          <option value="خرید">خرید</option>
+          <option value="فروش">فروش</option>
+          <option value="دریافت">دریافت</option>
+          <option value="پرداخت">پرداخت</option>
+          <option value="سند حسابداری">سند حسابداری</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">مغازه *</label>
+        <input class="form-input" id="inp-shop" list="shop-list" placeholder="نام مغازه">
+        <datalist id="shop-list"></datalist>
+      </div>
+      <div class="form-group">
+        <label class="form-label">شخص</label>
+        <input class="form-input" id="inp-person" list="person-list" placeholder="نام شخص">
+        <datalist id="person-list"></datalist>
+      </div>
+      <div class="form-group">
+        <label class="form-label">تاریخ</label>
+        <input class="form-input" id="inp-date" placeholder="۱۴۰۴/۰۹/۱۷">
+      </div>
+      <div class="form-group">
+        <label class="form-label">طلا بد(گرم)</label>
+        <input class="form-input" id="inp-bad-gold" type="number" step="0.001" placeholder="0">
+      </div>
+      <div class="form-group">
+        <label class="form-label">طلا خوب(گرم)</label>
+        <input class="form-input" id="inp-good-gold" type="number" step="0.001" placeholder="0">
+      </div>
+      <div class="form-group">
+        <label class="form-label">ریال بد</label>
+        <input class="form-input" id="inp-bad-rial" type="number" placeholder="0">
+      </div>
+      <div class="form-group">
+        <label class="form-label">ریال خوب</label>
+        <input class="form-input" id="inp-good-rial" type="number" placeholder="0">
+      </div>
+      <div class="form-group">
+        <label class="form-label">قیمت خرید</label>
+        <input class="form-input" id="inp-purchase" type="number" placeholder="0">
+      </div>
+      <div class="form-group">
+        <label class="form-label">قیمت فروش</label>
+        <input class="form-input" id="inp-selling" type="number" placeholder="0">
+      </div>
+      <div class="form-group full">
+        <label class="form-label">توضیحات</label>
+        <textarea class="form-textarea" id="inp-desc" placeholder="توضیحات..."></textarea>
+      </div>
+    </div>
+    <div style="display:flex; gap:10px; margin-top:16px">
+      <button class="btn btn-primary" style="flex:1" onclick="saveTransaction()">✅ ذخیره</button>
+      <button class="btn btn-outline" onclick="closeModal()">انصراف</button>
+    </div>
+  </div>
+</div>
+
+<!-- CONFIRM MODAL -->
+<div class="confirm-overlay" id="confirm-modal">
+  <div class="confirm-box">
+    <div class="confirm-icon" id="confirm-icon">⚠️</div>
+    <div class="confirm-title" id="confirm-title">تأیید عملیات</div>
+    <div class="confirm-msg" id="confirm-msg">آیا مطمئن هستید؟</div>
+    <div class="confirm-btns">
+      <button class="btn btn-danger" style="flex:1" id="confirm-ok-btn">تأیید</button>
+      <button class="btn btn-outline" style="flex:1" onclick="closeConfirm()">انصراف</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ===== STATE =====
+let db = { transactions: [] };
+let editingId = null;
+let pendingImport = null;
+let confirmCallback = null;
+
+// ===== STORAGE =====
+const STORAGE_KEY = 'gold_accounting_v1';
+
+function saveDB() {
+  try {
+    const serialized = JSON.stringify(db);
+    localStorage.setItem(STORAGE_KEY, serialized);
+    return true;
+  } catch(e) {
+    console.error('Save error:', e);
+    showToast('⚠️ خطا در ذخیره‌سازی: ' + e.message);
+    return false;
+  }
+}
+
+function loadDB() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed && Array.isArray(parsed.transactions)) {
+        db = parsed;
+      }
+    }
+  } catch(e) {
+    console.error('Load error:', e);
+    db = { transactions: [] };
+  }
+}
+
+// ===== THEME =====
+function loadTheme() {
+  const saved = localStorage.getItem('gold_theme') || 'dark';
+  applyTheme(saved);
+}
+
+function applyTheme(theme) {
+  document.body.classList.remove('dark', 'light');
+  document.body.classList.add(theme);
+  document.getElementById('theme-btn').textContent = theme === 'dark' ? '☀️' : '🌙';
+  localStorage.setItem('gold_theme', theme);
+}
+
+function toggleTheme() {
+  const current = document.body.classList.contains('dark') ? 'dark' : 'light';
+  applyTheme(current === 'dark' ? 'light' : 'dark');
+}
+
+// ===== HELPERS =====
+function fmtRial(v) {
+  if (!v || v === 0) return '-';
+  const abs = Math.abs(v);
+  let str;
+  if (abs >= 10000000000) str = (abs/10000000000).toFixed(2) + ' میلیارد ت';
+  else if (abs >= 10000000) str = (abs/10000000).toFixed(1) + ' میلیون ت';
+  else str = Math.round(abs/10).toLocaleString('fa-IR') + ' ت';
+  return (v < 0 ? '-' : '') + str;
+}
+
+function fmtGold(v) {
+  if (!v || v === 0) return '-';
+  return (+v).toFixed(3) + ' گ';
+}
+
+function typeBadge(t) {
+  const map = {
+    'خرید': 'badge-buy', 'فروش': 'badge-sell',
+    'دریافت': 'badge-recv', 'پرداخت': 'badge-pay',
+    'سند حسابداری': 'badge-doc',
+  };
+  const cls = map[t] || 'badge-doc';
+  return `<span class="badge ${cls}">${t || '-'}</span>`;
+}
+
+function showToast(msg) {
+  document.querySelectorAll('.toast').forEach(e => e.remove());
+  const t = document.createElement('div');
+  t.className = 'toast';
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => { if(t.parentNode) t.remove(); }, 3200);
+}
+
+// ===== CONFIRM DIALOG =====
+function showConfirm(icon, title, msg, onOk) {
+  document.getElementById('confirm-icon').textContent = icon;
+  document.getElementById('confirm-title').textContent = title;
+  document.getElementById('confirm-msg').textContent = msg;
+  confirmCallback = onOk;
+  document.getElementById('confirm-ok-btn').onclick = () => {
+    closeConfirm();
+    if (confirmCallback) confirmCallback();
+  };
+  document.getElementById('confirm-modal').classList.add('open');
+}
+
+function closeConfirm() {
+  document.getElementById('confirm-modal').classList.remove('open');
+  confirmCallback = null;
+}
+
+// ===== PAGES =====
+function showPage(name, btn) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  if (btn) btn.classList.add('active');
+  updateFilters();
+  if (name === 'dashboard') renderDashboard();
+  else if (name === 'transactions') renderTransactions();
+  else if (name === 'persons') renderPersons();
+  else if (name === 'shops') renderShops();
+}
+
+// ===== DASHBOARD =====
+function renderDashboard() {
+  const txs = db.transactions;
+  let totalGold = 0, totalRial = 0, totalProfit = 0;
+  let shops = {};
+
+  txs.forEach(tx => {
+    const gBal = (tx.goodGold||0) - (tx.badGold||0);
+    const rBal = (tx.goodRial||0) - (tx.badRial||0);
+    totalGold += gBal;
+    totalRial += rBal;
+    totalProfit += (tx.profit||0);
+    const s = tx.shopName || 'نامشخص';
+    if (!shops[s]) shops[s] = { gold:0, rial:0, profit:0, count:0 };
+    shops[s].gold += gBal;
+    shops[s].rial += rBal;
+    shops[s].profit += (tx.profit||0);
+    shops[s].count++;
+  });
+
+  document.getElementById('overview-stats').innerHTML = `
+    <div class="stat-card">
+      <div class="stat-label">موجودی طلا (کل)</div>
+      <div class="stat-value gold-c">${totalGold.toFixed(3)} گ</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">موجودی ریالی (کل)</div>
+      <div class="stat-value ${totalRial>=0?'green':'red'}">${fmtRial(totalRial)}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">کل سود/زیان</div>
+      <div class="stat-value ${totalProfit>=0?'green':'red'}">${fmtRial(totalProfit)}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">تعداد تراکنش</div>
+      <div class="stat-value blue">${txs.length.toLocaleString('fa-IR')}</div>
+    </div>
+  `;
+
+  const shopEntries = Object.entries(shops);
+  if (shopEntries.length === 0) {
+    document.getElementById('shop-cards').innerHTML = `
+      <div class="empty-state">
+        <div class="empty-icon">🏪</div>
+        <div>هنوز داده‌ای وجود ندارد</div>
+        <div style="margin-top:8px;font-size:12px">از منوی «ورود داده» فایل اکسل خود را وارد کنید</div>
+      </div>`;
+    return;
+  }
+
+  document.getElementById('shop-cards').innerHTML = shopEntries.map(([shop, d]) => `
+    <div class="card" style="border-right: 3px solid var(--gold)">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px">
+        <div style="font-size:15px; font-weight:700">🏪 ${shop}</div>
+        <span class="text-muted">${d.count} تراکنش</span>
+      </div>
+      <div class="stats-grid">
+        <div class="stat-card"><div class="stat-label">موجودی طلا</div><div class="stat-value gold-c">${d.gold.toFixed(3)} گ</div></div>
+        <div class="stat-card"><div class="stat-label">موجودی ریالی</div><div class="stat-value ${d.rial>=0?'green':'red'}">${fmtRial(d.rial)}</div></div>
+      </div>
+      <div style="margin-top:10px; padding:10px; background:var(--surface3); border-radius:8px; display:flex; justify-content:space-between">
+        <span class="text-muted">سود/زیان:</span>
+        <span style="font-weight:700" class="${d.profit>=0?'positive':'negative'}">${fmtRial(d.profit)}</span>
+      </div>
+    </div>`).join('');
+}
+
+// ===== TRANSACTIONS =====
+function renderTransactions() {
+  const shopF   = document.getElementById('filter-shop')?.value || '';
+  const personF = document.getElementById('filter-person')?.value || '';
+  const typeF   = document.getElementById('filter-type')?.value || '';
+
+  let txs = db.transactions.filter(tx => {
+    if (shopF   && tx.shopName !== shopF)   return false;
+    if (personF && tx.person   !== personF) return false;
+    if (typeF   && tx.type     !== typeF)   return false;
+    return true;
+  });
+
+  txs = [...txs].sort((a,b) => (Number(b.id)||0) - (Number(a.id)||0));
+  document.getElementById('tx-count').textContent = `${txs.length} تراکنش`;
+
+  if (txs.length === 0) {
+    document.getElementById('tx-tbody').innerHTML =
+      `<tr><td colspan="11" style="text-align:center;padding:30px;color:var(--text-muted)">موردی یافت نشد</td></tr>`;
+    return;
+  }
+
+  document.getElementById('tx-tbody').innerHTML = txs.map(tx => `
+    <tr>
+      <td>${tx.date || '-'}</td>
+      <td><span style="color:var(--gold-light)">${tx.shopName || '-'}</span></td>
+      <td>${typeBadge(tx.type)}</td>
+      <td>${tx.person || '-'}</td>
+      <td style="max-width:120px;overflow:hidden;text-overflow:ellipsis">${tx.description || '-'}</td>
+      <td class="negative">${tx.badGold  ? (+tx.badGold).toFixed(3)  : '-'}</td>
+      <td class="positive">${tx.goodGold ? (+tx.goodGold).toFixed(3) : '-'}</td>
+      <td class="negative">${tx.badRial  ? fmtRial(tx.badRial)       : '-'}</td>
+      <td class="positive">${tx.goodRial ? fmtRial(tx.goodRial)      : '-'}</td>
+      <td class="${(tx.profit||0)>=0?'positive':'negative'}">${tx.profit ? fmtRial(tx.profit) : '-'}</td>
+      <td>
+        <div style="display:flex;gap:4px">
+          <button class="btn btn-outline btn-sm" onclick="editTx(${JSON.stringify(tx.id)})">✏️</button>
+          <button class="btn btn-danger btn-sm"  onclick="askDeleteTx(${JSON.stringify(tx.id)})">🗑</button>
+        </div>
+      </td>
+    </tr>`).join('');
+}
+
+// ===== PERSONS =====
+function renderPersons() {
+  const shopF  = document.getElementById('filter-person-shop')?.value || '';
+  const search = (document.getElementById('filter-person-search')?.value || '').toLowerCase();
+
+  const map = {};
+  db.transactions.forEach(tx => {
+    const person = tx.person || '(بدون نام)';
+    const shop   = tx.shopName || 'نامشخص';
+    if (shopF  && shop !== shopF) return;
+    if (search && !person.toLowerCase().includes(search) && !shop.toLowerCase().includes(search)) return;
+    const key = `${person}||${shop}`;
+    if (!map[key]) map[key] = { person, shop, gold:0, rial:0, profit:0, count:0 };
+    map[key].gold   += (tx.goodGold||0) - (tx.badGold||0);
+    map[key].rial   += (tx.goodRial||0) - (tx.badRial||0);
+    map[key].profit += (tx.profit||0);
+    map[key].count++;
+  });
+
+  const persons = Object.values(map).sort((a,b) => b.count - a.count);
+  if (persons.length === 0) {
+    document.getElementById('persons-list').innerHTML =
+      '<div class="empty-state"><div class="empty-icon">👥</div><div>موردی یافت نشد</div></div>';
+    return;
+  }
+
+  document.getElementById('persons-list').innerHTML = persons.map(p => `
+    <div class="person-card">
+      <div class="person-header">
+        <div>
+          <div class="person-name">👤 ${p.person}</div>
+          <div style="font-size:11px;color:var(--text-muted);margin-top:2px">${p.count} تراکنش</div>
+        </div>
+        <span class="person-shop">🏪 ${p.shop}</span>
+      </div>
+      <div class="person-stats">
+        <div class="person-stat">
+          <div class="person-stat-label">موجودی طلا</div>
+          <div class="person-stat-value ${p.gold>=0?'positive':'negative'}">${p.gold.toFixed(3)}گ</div>
+        </div>
+        <div class="person-stat">
+          <div class="person-stat-label">موجودی ریال</div>
+          <div class="person-stat-value ${p.rial>=0?'positive':'negative'}">${fmtRial(p.rial)}</div>
+        </div>
+        <div class="person-stat">
+          <div class="person-stat-label">سود/زیان</div>
+          <div class="person-stat-value ${p.profit>=0?'positive':'negative'}">${fmtRial(p.profit)}</div>
+        </div>
+      </div>
+    </div>`).join('');
+}
+
+// ===== SHOPS =====
+function renderShops() {
+  const shops = [...new Set(db.transactions.map(t => t.shopName || 'نامشخص'))];
+  if (shops.length === 0) {
+    document.getElementById('shops-detail').innerHTML =
+      '<div class="empty-state"><div class="empty-icon">🏪</div><div>هنوز مغازه‌ای ثبت نشده</div></div>';
+    return;
+  }
+
+  document.getElementById('shops-detail').innerHTML = shops.map(shop => {
+    const txs = db.transactions.filter(t => (t.shopName||'نامشخص') === shop);
+    const persons = [...new Set(txs.map(t => t.person).filter(Boolean))];
+    let tGold=0, tRial=0, tProfit=0;
+    let typeC = {};
+    txs.forEach(tx => {
+      tGold   += (tx.goodGold||0)-(tx.badGold||0);
+      tRial   += (tx.goodRial||0)-(tx.badRial||0);
+      tProfit += (tx.profit||0);
+      typeC[tx.type||'سایر'] = (typeC[tx.type||'سایر']||0)+1;
+    });
+
+    const typeRows = Object.entries(typeC).map(([k,v]) =>
+      `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border)">
+         <span>${typeBadge(k)}</span><span>${v} مورد</span></div>`).join('');
+
+    return `
+      <div class="card" style="margin-bottom:16px;border-right:3px solid var(--gold)">
+        <div style="font-size:16px;font-weight:800;margin-bottom:14px">🏪 ${shop}</div>
+        <div class="stats-grid" style="margin-bottom:14px">
+          <div class="stat-card"><div class="stat-label">موجودی طلا</div><div class="stat-value gold-c">${tGold.toFixed(3)} گ</div></div>
+          <div class="stat-card"><div class="stat-label">موجودی ریالی</div><div class="stat-value ${tRial>=0?'green':'red'}">${fmtRial(tRial)}</div></div>
+          <div class="stat-card"><div class="stat-label">سود/زیان</div><div class="stat-value ${tProfit>=0?'green':'red'}">${fmtRial(tProfit)}</div></div>
+          <div class="stat-card"><div class="stat-label">اشخاص</div><div class="stat-value blue">${persons.length}</div></div>
+        </div>
+        <div class="section-title" style="font-size:12px">انواع تراکنش</div>
+        ${typeRows}
+        <div style="margin-top:12px">
+          <div class="section-title" style="font-size:12px">اشخاص</div>
+          <div style="display:flex;flex-wrap:wrap;gap:6px">
+            ${persons.map(p=>`<span style="background:var(--surface3);padding:4px 10px;border-radius:20px;font-size:12px">👤 ${p}</span>`).join('')}
+            ${persons.length===0?'<span class="text-muted">بدون شخص مشخص</span>':''}
+          </div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+// ===== FILTER UPDATE =====
+function updateFilters() {
+  const shops   = [...new Set(db.transactions.map(t=>t.shopName).filter(Boolean))];
+  const persons = [...new Set(db.transactions.map(t=>t.person).filter(Boolean))];
+
+  document.getElementById('shop-list').innerHTML   = shops.map(s=>`<option value="${s}">`).join('');
+  document.getElementById('person-list').innerHTML = persons.map(p=>`<option value="${p}">`).join('');
+
+  ['filter-shop','filter-person-shop'].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const cur = el.value;
+    el.innerHTML = '<option value="">همه مغازه‌ها</option>' +
+      shops.map(s=>`<option value="${s}"${s===cur?' selected':''}>${s}</option>`).join('');
+  });
+
+  const fp = document.getElementById('filter-person');
+  if (fp) {
+    const cur = fp.value;
+    fp.innerHTML = '<option value="">همه اشخاص</option>' +
+      persons.map(p=>`<option value="${p}"${p===cur?' selected':''}>${p}</option>`).join('');
+  }
+}
+
+// ===== ADD / EDIT =====
+function openAddModal(tx) {
+  editingId = tx ? tx.id : null;
+  document.getElementById('modal-title').textContent = tx ? 'ویرایش تراکنش' : 'ثبت تراکنش جدید';
+  document.getElementById('inp-type').value     = tx?.type        || 'خرید';
+  document.getElementById('inp-shop').value     = tx?.shopName    || '';
+  document.getElementById('inp-person').value   = tx?.person      || '';
+  document.getElementById('inp-date').value     = tx?.date        || '';
+  document.getElementById('inp-bad-gold').value = tx?.badGold     || '';
+  document.getElementById('inp-good-gold').value= tx?.goodGold    || '';
+  document.getElementById('inp-bad-rial').value = tx?.badRial     || '';
+  document.getElementById('inp-good-rial').value= tx?.goodRial    || '';
+  document.getElementById('inp-purchase').value = tx?.purchasePrice || '';
+  document.getElementById('inp-selling').value  = tx?.sellingPrice  || '';
+  document.getElementById('inp-desc').value     = tx?.description || '';
+  updateFilters();
+  document.getElementById('add-modal').classList.add('open');
+}
+
+function closeModal() {
+  document.getElementById('add-modal').classList.remove('open');
+  editingId = null;
+}
+
+function saveTransaction() {
+  const shop = document.getElementById('inp-shop').value.trim();
+  if (!shop) { showToast('⚠️ نام مغازه الزامی است'); return; }
+
+  const badGold  = parseFloat(document.getElementById('inp-bad-gold').value)  || 0;
+  const goodGold = parseFloat(document.getElementById('inp-good-gold').value) || 0;
+  const badRial  = parseFloat(document.getElementById('inp-bad-rial').value)  || 0;
+  const goodRial = parseFloat(document.getElementById('inp-good-rial').value) || 0;
+  const purchasePrice = parseFloat(document.getElementById('inp-purchase').value) || 0;
+  const sellingPrice  = parseFloat(document.getElementById('inp-selling').value)  || 0;
+
+  const tx = {
+    id: editingId !== null ? editingId : Date.now(),
+    shopName: shop,
+    type: document.getElementById('inp-type').value,
+    person: document.getElementById('inp-person').value.trim() || null,
+    date:   document.getElementById('inp-date').value.trim()   || null,
+    description: document.getElementById('inp-desc').value.trim() || null,
+    badGold, goodGold, badRial, goodRial,
+    purchasePrice, sellingPrice,
+    profit: purchasePrice || sellingPrice ? (sellingPrice - purchasePrice) : 0,
+  };
+
+  if (editingId !== null) {
+    const idx = db.transactions.findIndex(t => t.id === editingId);
+    if (idx >= 0) db.transactions[idx] = tx;
+    else db.transactions.push(tx);
+  } else {
+    db.transactions.push(tx);
+  }
+
+  const ok = saveDB();
+  closeModal();
+  updateFilters();
+  if (ok) showToast(editingId !== null ? '✅ ویرایش شد' : '✅ ثبت شد');
+
+  // refresh active page
+  const activePage = document.querySelector('.page.active')?.id;
+  if (activePage === 'page-dashboard')    renderDashboard();
+  if (activePage === 'page-transactions') renderTransactions();
+  if (activePage === 'page-persons')      renderPersons();
+  if (activePage === 'page-shops')        renderShops();
+}
+
+function editTx(id) {
+  const tx = db.transactions.find(t => t.id === id);
+  if (tx) openAddModal(tx);
+}
+
+// ===== DELETE =====
+function askDeleteTx(id) {
+  const tx = db.transactions.find(t => t.id === id);
+  const label = tx ? `${tx.type||''} - ${tx.person||'بدون شخص'} - ${tx.date||'بدون تاریخ'}` : 'این تراکنش';
+  showConfirm('🗑️', 'حذف تراکنش', `آیا مطمئن هستید؟\n«${label}» حذف شود؟`, () => {
+    db.transactions = db.transactions.filter(t => t.id !== id);
+    saveDB();
+    renderTransactions();
+    showToast('🗑️ تراکنش حذف شد');
+  });
+}
+
+function askClearAll() {
+  showConfirm('⚠️', 'پاک کردن همه داده‌ها',
+    'این عمل غیرقابل بازگشت است!\nهمه تراکنش‌ها و اطلاعات پاک خواهند شد.', () => {
+    db = { transactions: [] };
+    saveDB();
+    updateFilters();
+    renderDashboard();
+    showToast('🗑️ همه داده‌ها پاک شد');
+  });
+}
+
+// ===== IMPORT =====
+function handleDrop(e) {
+  e.preventDefault();
+  document.getElementById('import-area').classList.remove('drag');
+  const file = e.dataTransfer.files[0];
+  if (file) processFile(file);
+}
+
+function handleFileInput(e) {
+  const file = e.target.files[0];
+  if (file) processFile(file);
+  e.target.value = '';
+}
+
+function processFile(file) {
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const wb = XLSX.read(e.target.result, { type: 'array' });
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(ws, { defval: null });
+
+      if (!rows.length) { showToast('⚠️ فایل خالی است'); return; }
+
+      const shopInput = document.getElementById('import-shop').value.trim();
+      const firstRow  = rows[0];
+      const keys      = Object.keys(firstRow);
+
+      function findCol(aliases) {
+        for (const a of aliases) { if (keys.includes(a)) return a; }
+        return null;
+      }
+
+      const colMap = {
+        id:           ['id'],
+        shopName:     ['shopName','shop','مغازه'],
+        type:         ['type','نوع'],
+        person:       ['person','شخص'],
+        date:         ['date','تاریخ'],
+        description:  ['description','توضیح','desc'],
+        badGold:      ['badGold','طلا بد'],
+        goodGold:     ['goodGold','طلا خوب'],
+        badRial:      ['badRial','ریال بد'],
+        goodRial:     ['goodRial','ریال خوب'],
+        purchasePrice:['purchasePrice','قیمت خرید'],
+        sellingPrice: ['sellingPrice','قیمت فروش'],
+        profit:       ['profit','سود'],
+        goldBalance:  ['goldBalance'],
+        rialBalance:  ['rialBalance'],
+      };
+
+      const mapped = {};
+      for (const [field, aliases] of Object.entries(colMap)) {
+        mapped[field] = findCol(aliases);
+      }
+
+      const get = (row, field) => mapped[field] ? row[mapped[field]] : null;
+
+      const parsed = rows.map((row, i) => {
+        const shopName = get(row,'shopName') || shopInput ||
+          file.name.replace(/\.(xlsx?)/i,'');
+        return {
+          id:           get(row,'id') || (Date.now() + i + Math.random()),
+          shopName,
+          type:         get(row,'type'),
+          person:       get(row,'person'),
+          date:         get(row,'date'),
+          description:  get(row,'description'),
+          badGold:      parseFloat(get(row,'badGold'))       || 0,
+          goodGold:     parseFloat(get(row,'goodGold'))      || 0,
+          badRial:      parseFloat(get(row,'badRial'))       || 0,
+          goodRial:     parseFloat(get(row,'goodRial'))      || 0,
+          purchasePrice:parseFloat(get(row,'purchasePrice')) || 0,
+          sellingPrice: parseFloat(get(row,'sellingPrice'))  || 0,
+          profit:       parseFloat(get(row,'profit'))        || 0,
+          goldBalance:  parseFloat(get(row,'goldBalance'))   || 0,
+          rialBalance:  parseFloat(get(row,'rialBalance'))   || 0,
+        };
+      });
+
+      pendingImport = parsed;
+      const shops   = [...new Set(parsed.map(r=>r.shopName))];
+      const persons = [...new Set(parsed.map(r=>r.person).filter(Boolean))];
+
+      document.getElementById('import-summary').innerHTML = `
+        <table class="summary-table">
+          <tr><td>تعداد ردیف</td><td>${parsed.length}</td></tr>
+          <tr><td>مغازه‌ها</td><td>${shops.join('، ')}</td></tr>
+          <tr><td>اشخاص</td><td>${persons.length} نفر</td></tr>
+        </table>`;
+      document.getElementById('import-preview').style.display = 'block';
+      showToast(`📋 ${parsed.length} ردیف آماده وارد کردن`);
+    } catch(err) {
+      showToast('⚠️ خطا در خواندن فایل: ' + err.message);
+      console.error(err);
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function confirmImport() {
+  if (!pendingImport) return;
+  const mode = document.getElementById('import-dup').value;
+  const existingIds = new Set(db.transactions.map(t => String(t.id)));
+  let added=0, skipped=0, replaced=0;
+
+  pendingImport.forEach(row => {
+    const id = String(row.id);
+    if (mode === 'skip' && existingIds.has(id)) { skipped++; return; }
+    if (mode === 'replace' && existingIds.has(id)) {
+      const idx = db.transactions.findIndex(t => String(t.id) === id);
+      if (idx >= 0) { db.transactions[idx] = row; replaced++; return; }
+    }
+    db.transactions.push(row);
+    existingIds.add(id);
+    added++;
+  });
+
+  const ok = saveDB();
+  updateFilters();
+  pendingImport = null;
+  document.getElementById('import-preview').style.display = 'none';
+  if (ok) showToast(`✅ وارد شد: ${added} جدید، ${replaced} جایگزین، ${skipped} تکراری`);
+}
+
+// ===== EXPORT =====
+function exportExcel() {
+  if (!db.transactions.length) { showToast('⚠️ داده‌ای برای خروجی وجود ندارد'); return; }
+
+  const wb = XLSX.utils.book_new();
+
+  const allData = db.transactions.map(tx => ({
+    id: tx.id, shopName: tx.shopName, type: tx.type,
+    person: tx.person, date: tx.date, description: tx.description,
+    badGold: tx.badGold, goodGold: tx.goodGold,
+    badRial: tx.badRial, goodRial: tx.goodRial,
+    purchasePrice: tx.purchasePrice, sellingPrice: tx.sellingPrice,
+    profit: tx.profit, goldBalance: tx.goldBalance, rialBalance: tx.rialBalance,
+  }));
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(allData), 'همه تراکنش‌ها');
+
+  const shops = [...new Set(db.transactions.map(t=>t.shopName||'نامشخص'))];
+  shops.forEach(shop => {
+    const txs = db.transactions.filter(t=>(t.shopName||'نامشخص')===shop);
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(txs), shop.substring(0,30));
+  });
+
+  XLSX.writeFile(wb, `gold_backup_${new Date().toISOString().split('T')[0]}.xlsx`);
+  showToast('📥 فایل خروجی دانلود شد');
+}
+
+// ===== INIT =====
+loadDB();
+loadTheme();
+renderDashboard();
+updateFilters();
+</script>
+</body>
+</html>
