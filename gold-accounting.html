@@ -329,6 +329,69 @@
       color: var(--purple);
     }
 
+    .badge-coin {
+      background: rgba(201, 168, 76, 0.15);
+      color: var(--gold-light);
+      border: 1px solid rgba(201, 168, 76, 0.2);
+    }
+
+    .badge-melt {
+      background: rgba(224, 142, 85, 0.15);
+      color: #E89E7A;
+    }
+
+    /* CALCULATOR */
+    .calc-card {
+      background: linear-gradient(135deg, var(--surface), var(--surface2));
+      border: 1px solid var(--gold-dark);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .calc-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 4px;
+      height: 100%;
+      background: var(--gold);
+    }
+
+    .calc-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .calc-result {
+      background: rgba(201, 168, 76, 0.07);
+      border-radius: 8px;
+      padding: 12px;
+      margin-top: 12px;
+      border: 1px dashed var(--gold-dark);
+    }
+
+    .calc-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 6px;
+      font-size: 13px;
+    }
+
+    .calc-val {
+      font-weight: 700;
+      color: var(--gold-light);
+    }
+
+    /* STATS GRID */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
     .badge-doc {
       background: rgba(201, 168, 76, 0.15);
       color: var(--gold-light);
@@ -740,6 +803,8 @@
       padding: 8px 12px;
       border-bottom: 1px solid var(--border);
       font-size: 13px;
+      white-space: normal;
+      word-break: break-word;
     }
 
     .summary-table td:first-child {
@@ -749,7 +814,24 @@
     .summary-table td:last-child {
       text-align: left;
       font-weight: 600;
-      word-break: break-word;
+    }
+
+    /* ensure import preview is responsive on small screens */
+    #import-summary {
+      overflow-x: auto;
+      max-width: 100%;
+    }
+
+    /* limit preview height on small screens to avoid overflowing viewport */
+    #import-preview {
+      max-height: 60vh;
+      overflow-y: auto;
+    }
+
+    @media (max-width: 480px) {
+      #import-summary table {
+        font-size: 13px;
+      }
     }
   </style>
 </head>
@@ -784,6 +866,29 @@
 
     <!-- DASHBOARD -->
     <div class="page active" id="page-dashboard">
+      <div class="calc-card card">
+        <div class="section-title">🧮 ماشین‌حساب طلا</div>
+        <div class="calc-grid">
+          <div class="form-group">
+            <label class="form-label">وزن (گرم)</label>
+            <input type="number" class="form-input" id="calc-weight" placeholder="0.000" oninput="runCalc()">
+          </div>
+          <div class="form-group">
+            <label class="form-label">عیار (واحد)</label>
+            <input type="number" class="form-input" id="calc-karat" value="750" placeholder="750" oninput="runCalc()">
+          </div>
+          <div class="form-group full">
+            <label class="form-label">قیمت هر گرم ۱۸ (ریال)</label>
+            <input type="number" class="form-input" id="calc-price" placeholder="قیمت روز..." oninput="runCalc()">
+          </div>
+        </div>
+        <div class="calc-result" id="calc-res-box">
+          <div class="calc-row"><span>ارزش کل:</span><span class="calc-val" id="res-total">-</span></div>
+          <div class="calc-row"><span>وزن ۷۵۰:</span><span id="res-750">-</span></div>
+          <div class="calc-row"><span>وزن ۱۰۰۰ (آبشده):</span><span id="res-1000">-</span></div>
+        </div>
+      </div>
+
       <div class="section-title">خلاصه کل</div>
       <div class="stats-grid" id="overview-stats"></div>
       <div class="section-title">به تفکیک مغازه</div>
@@ -801,10 +906,13 @@
         </select>
         <select class="filter-select" id="filter-type" onchange="renderTransactions()">
           <option value="">همه انواع</option>
-          <option value="خرید">خرید</option>
-          <option value="فروش">فروش</option>
-          <option value="دریافت">دریافت</option>
-          <option value="پرداخت">پرداخت</option>
+          <option value="خرید">خرید طلا</option>
+          <option value="فروش">فروش طلا</option>
+          <option value="خرید سکه">خرید سکه</option>
+          <option value="فروش سکه">فروش سکه</option>
+          <option value="آبشده">آبشده</option>
+          <option value="دریافت">دریافت وجه</option>
+          <option value="پرداخت">پرداخت وجه</option>
           <option value="سند حسابداری">سند حسابداری</option>
         </select>
       </div>
@@ -901,11 +1009,25 @@
         <div class="form-group">
           <label class="form-label">نوع تراکنش *</label>
           <select class="form-select" id="inp-type">
-            <option value="خرید">خرید</option>
-            <option value="فروش">فروش</option>
-            <option value="دریافت">دریافت</option>
-            <option value="پرداخت">پرداخت</option>
+            <option value="خرید">خرید طلا</option>
+            <option value="فروش">فروش طلا</option>
+            <option value="خرید سکه">خرید سکه</option>
+            <option value="فروش سکه">فروش سکه</option>
+            <option value="آبشده">آبشده</option>
+            <option value="دریافت">دریافت وجه/طلا</option>
+            <option value="پرداخت">پرداخت وجه/طلا</option>
             <option value="سند حسابداری">سند حسابداری</option>
+          </select>
+        </div>
+        <div class="form-group" id="coin-type-group" style="display:none">
+          <label class="form-label">نوع سکه *</label>
+          <select class="form-select" id="inp-coin-type">
+            <option value="تمام (امامی)">تمام (امامی)</option>
+            <option value="تمام (بهار آزادی)">تمام (بهار آزادی)</option>
+            <option value="نیم سکه">نیم سکه</option>
+            <option value="ربع سکه">ربع سکه</option>
+            <option value="سکه گرمی">سکه گرمی</option>
+            <option value="پارسیان">پارسیان</option>
           </select>
         </div>
         <div class="form-group">
@@ -1027,15 +1149,6 @@
     }
 
     // ===== HELPERS =====
-    function getTodayJalali() {
-      const now = new Date();
-      const options = { year: 'numeric', month: '2-digit', day: '2-digit', calendar: 'persian', numberingSystem: 'latn' };
-      const formatter = new Intl.DateTimeFormat('fa-IR-u-ca-persian', options);
-      const parts = formatter.formatToParts(now);
-      const getPart = (type) => parts.find(p => p.type === type).value;
-      return `${getPart('year')}/${getPart('month')}/${getPart('day')}`;
-    }
-
     function fmtRial(v) {
       if (!v || v === 0) return '-';
       const abs = Math.abs(v);
@@ -1051,14 +1164,72 @@
       return (+v).toFixed(3) + ' گ';
     }
 
+    // ===== JALALI DATE HELPERS =====
+    function div(a, b) { return Math.floor(a / b); }
+    function gregorianToJalali(gy, gm, gd) {
+      var g_d_m = [0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334];
+      var jy, jm, jd;
+      var gy2 = gy - 1600;
+      var gm2 = gm - 1;
+      var gd2 = gd - 1;
+      var g_day_no = 365 * gy2 + Math.floor((gy2 + 3) / 4) - Math.floor((gy2 + 99) / 100) + Math.floor((gy2 + 399) / 400);
+      for (var i = 0; i < gm2; i++) g_day_no += g_d_m[i];
+      if (gm2 > 1 && ((gy % 4 == 0 && gy % 100 != 0) || (gy % 400 == 0))) g_day_no++;
+      g_day_no += gd2;
+      var j_day_no = g_day_no - 79;
+      var j_np = Math.floor(j_day_no / 12053);
+      j_day_no = j_day_no % 12053;
+      jy = 979 + 33 * j_np + 4 * Math.floor(j_day_no / 1461);
+      j_day_no = j_day_no % 1461;
+      if (j_day_no >= 366) {
+        jy += Math.floor((j_day_no - 366) / 365);
+        j_day_no = (j_day_no - 366) % 365;
+      }
+      var jm_days = [31, 31, 31, 31, 31, 31, 30, 30, 30, 30, 30, 29];
+      for (var i = 0; i < 11 && j_day_no >= jm_days[i]; i++) j_day_no -= jm_days[i];
+      jm = i + 1;
+      jd = j_day_no + 1;
+      return { jy, jm, jd };
+    }
+
+    function pad2(n) { return String(n).padStart(2, '0'); }
+    function toPersianDigits(s) {
+      const map = { 0: '۰', 1: '۱', 2: '۲', 3: '۳', 4: '۴', 5: '۵', 6: '۶', 7: '۷', 8: '۸', 9: '۹' };
+      return String(s).split('').map(c => (c >= '0' && c <= '9') ? map[c] : c).join('');
+    }
+
+    function currentJalaliDate() {
+      const d = new Date();
+      const gY = d.getFullYear(), gM = d.getMonth() + 1, gD = d.getDate();
+      const j = gregorianToJalali(gY, gM, gD);
+      return `${toPersianDigits(j.jy)}/${toPersianDigits(pad2(j.jm))}/${toPersianDigits(pad2(j.jd))}`;
+    }
+
     function typeBadge(t) {
       const map = {
         'خرید': 'badge-buy', 'فروش': 'badge-sell',
         'دریافت': 'badge-recv', 'پرداخت': 'badge-pay',
+        'خرید سکه': 'badge-coin', 'فروش سکه': 'badge-coin',
+        'آبشده': 'badge-melt',
         'سند حسابداری': 'badge-doc',
       };
       const cls = map[t] || 'badge-doc';
       return `<span class="badge ${cls}">${t || '-'}</span>`;
+    }
+
+    function runCalc() {
+      const w = parseFloat(document.getElementById('calc-weight').value) || 0;
+      const k = parseFloat(document.getElementById('calc-karat').value) || 750;
+      const p = parseFloat(document.getElementById('calc-price').value) || 0;
+
+      const standardK = 750;
+      const weight750 = (w * k) / standardK;
+      const weight1000 = (w * k) / 1000;
+      const totalRial = weight750 * p;
+
+      document.getElementById('res-total').textContent = totalRial > 0 ? fmtRial(totalRial) : '-';
+      document.getElementById('res-750').textContent = weight750 > 0 ? weight750.toFixed(3) + ' گرم' : '-';
+      document.getElementById('res-1000').textContent = weight1000 > 0 ? weight1000.toFixed(3) + ' گرم' : '-';
     }
 
     function showToast(msg) {
@@ -1194,7 +1365,12 @@
     <tr>
       <td>${tx.date || '-'}</td>
       <td><span style="color:var(--gold-light)">${tx.shopName || '-'}</span></td>
-      <td>${typeBadge(tx.type)}</td>
+      <td>
+        <div style="display:flex;flex-direction:column">
+          <span>${typeBadge(tx.type)}</span>
+          ${tx.coinType ? `<small style="font-size:10px;color:var(--text-muted)">${tx.coinType}</small>` : ''}
+        </div>
+      </td>
       <td>${tx.person || '-'}</td>
       <td style="max-width:120px;overflow:hidden;text-overflow:ellipsis">${tx.description || '-'}</td>
       <td class="negative">${tx.badGold ? (+tx.badGold).toFixed(3) : '-'}</td>
@@ -1215,52 +1391,71 @@
     function renderPersons() {
       const shopF = document.getElementById('filter-person-shop')?.value || '';
       const search = (document.getElementById('filter-person-search')?.value || '').toLowerCase();
-
-      const map = {};
+      const personsMap = {};
       db.transactions.forEach(tx => {
         const person = tx.person || '(بدون نام)';
         const shop = tx.shopName || 'نامشخص';
         if (shopF && shop !== shopF) return;
         if (search && !person.toLowerCase().includes(search) && !shop.toLowerCase().includes(search)) return;
-        const key = `${person}||${shop}`;
-        if (!map[key]) map[key] = { person, shop, gold: 0, rial: 0, profit: 0, count: 0 };
-        map[key].gold += (tx.goodGold || 0) - (tx.badGold || 0);
-        map[key].rial += (tx.goodRial || 0) - (tx.badRial || 0);
-        map[key].profit += (tx.profit || 0);
-        map[key].count++;
+
+        if (!personsMap[person]) personsMap[person] = { person, gold: 0, rial: 0, profit: 0, count: 0, shops: {} };
+        const p = personsMap[person];
+        const g = (tx.goodGold || 0) - (tx.badGold || 0);
+        const r = (tx.goodRial || 0) - (tx.badRial || 0);
+        p.gold += g; p.rial += r; p.profit += (tx.profit || 0); p.count++;
+        if (!p.shops[shop]) p.shops[shop] = { name: shop, gold: 0, rial: 0, profit: 0, count: 0 };
+        p.shops[shop].gold += g; p.shops[shop].rial += r; p.shops[shop].profit += (tx.profit || 0); p.shops[shop].count++;
       });
 
-      const persons = Object.values(map).sort((a, b) => b.count - a.count);
+      const persons = Object.values(personsMap).sort((a, b) => b.count - a.count);
       if (persons.length === 0) {
         document.getElementById('persons-list').innerHTML =
           '<div class="empty-state"><div class="empty-icon">👥</div><div>موردی یافت نشد</div></div>';
         return;
       }
 
-      document.getElementById('persons-list').innerHTML = persons.map(p => `
-    <div class="person-card">
-      <div class="person-header">
-        <div>
-          <div class="person-name">👤 ${p.person}</div>
-          <div style="font-size:11px;color:var(--text-muted);margin-top:2px">${p.count} تراکنش</div>
+      document.getElementById('persons-list').innerHTML = persons.map(p => {
+        const shopDetails = Object.values(p.shops).map(s => `
+      <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border)">
+        <div style="display:flex;flex-direction:column">
+          <strong style="font-size:13px">🏪 ${s.name}</strong>
+          <small class="text-muted" style="font-size:11px">${s.count} تراکنش</small>
         </div>
-        <span class="person-shop">🏪 ${p.shop}</span>
-      </div>
-      <div class="person-stats">
-        <div class="person-stat">
-          <div class="person-stat-label">موجودی طلا</div>
-          <div class="person-stat-value ${p.gold >= 0 ? 'positive' : 'negative'}">${p.gold.toFixed(3)}گ</div>
+        <div style="text-align:left">
+          <div style="font-weight:700">${s.gold.toFixed(3)} گ</div>
+          <div style="font-size:12px">${fmtRial(s.rial)}</div>
         </div>
-        <div class="person-stat">
-          <div class="person-stat-label">موجودی ریال</div>
-          <div class="person-stat-value ${p.rial >= 0 ? 'positive' : 'negative'}">${fmtRial(p.rial)}</div>
+      </div>`).join('');
+
+        return `
+      <div class="person-card">
+        <div class="person-header">
+          <div>
+            <div class="person-name">👤 ${p.person}</div>
+            <div style="font-size:11px;color:var(--text-muted);margin-top:2px">${p.count} تراکنش</div>
+          </div>
+          <span class="person-shop">🏷️ مجموع</span>
         </div>
-        <div class="person-stat">
-          <div class="person-stat-label">سود/زیان</div>
-          <div class="person-stat-value ${p.profit >= 0 ? 'positive' : 'negative'}">${fmtRial(p.profit)}</div>
+        <div class="person-stats">
+          <div class="person-stat">
+            <div class="person-stat-label">موجودی طلا (کل)</div>
+            <div class="person-stat-value ${p.gold >= 0 ? 'positive' : 'negative'}">${p.gold.toFixed(3)} گ</div>
+          </div>
+          <div class="person-stat">
+            <div class="person-stat-label">موجودی ریال (کل)</div>
+            <div class="person-stat-value ${p.rial >= 0 ? 'positive' : 'negative'}">${fmtRial(p.rial)}</div>
+          </div>
+          <div class="person-stat">
+            <div class="person-stat-label">سود/زیان (کل)</div>
+            <div class="person-stat-value ${p.profit >= 0 ? 'positive' : 'negative'}">${fmtRial(p.profit)}</div>
+          </div>
         </div>
-      </div>
-    </div>`).join('');
+        <div style="margin-top:10px">
+          <div class="section-title" style="font-size:12px">جزئیات به تفکیک مغازه</div>
+          <div style="background:var(--surface3);padding:10px;border-radius:8px">${shopDetails}</div>
+        </div>
+      </div>`
+      }).join('');
     }
 
     // ===== SHOPS =====
@@ -1339,9 +1534,11 @@
       editingId = tx ? tx.id : null;
       document.getElementById('modal-title').textContent = tx ? 'ویرایش تراکنش' : 'ثبت تراکنش جدید';
       document.getElementById('inp-type').value = tx?.type || 'خرید';
+      document.getElementById('inp-coin-type').value = tx?.coinType || 'تمام (امامی)';
       document.getElementById('inp-shop').value = tx?.shopName || '';
+      toggleCoinType(); // Update visibility
       document.getElementById('inp-person').value = tx?.person || '';
-      document.getElementById('inp-date').value = tx?.date || getTodayJalali();
+      document.getElementById('inp-date').value = tx?.date || currentJalaliDate();
       document.getElementById('inp-bad-gold').value = tx?.badGold || '';
       document.getElementById('inp-good-gold').value = tx?.goodGold || '';
       document.getElementById('inp-bad-rial').value = tx?.badRial || '';
@@ -1361,20 +1558,24 @@
     function saveTransaction() {
       const shop = document.getElementById('inp-shop').value.trim();
       if (!shop) { showToast('⚠️ نام مغازه الزامی است'); return; }
-
       const badGold = parseFloat(document.getElementById('inp-bad-gold').value) || 0;
       const goodGold = parseFloat(document.getElementById('inp-good-gold').value) || 0;
       const badRial = parseFloat(document.getElementById('inp-bad-rial').value) || 0;
       const goodRial = parseFloat(document.getElementById('inp-good-rial').value) || 0;
       const purchasePrice = parseFloat(document.getElementById('inp-purchase').value) || 0;
       const sellingPrice = parseFloat(document.getElementById('inp-selling').value) || 0;
+      const dateInput = (document.getElementById('inp-date').value || '').trim();
+      const dateVal = dateInput ? dateInput : currentJalaliDate();
+      const coinType = document.getElementById('inp-coin-type').value;
+      const isCoin = ['خرید سکه', 'فروش سکه'].includes(document.getElementById('inp-type').value);
 
       const tx = {
         id: editingId !== null ? editingId : Date.now(),
         shopName: shop,
         type: document.getElementById('inp-type').value,
+        coinType: isCoin ? coinType : null,
         person: document.getElementById('inp-person').value.trim() || null,
-        date: document.getElementById('inp-date').value.trim() || getTodayJalali(),
+        date: dateVal || null,
         description: document.getElementById('inp-desc').value.trim() || null,
         badGold, goodGold, badRial, goodRial,
         purchasePrice, sellingPrice,
@@ -1382,7 +1583,7 @@
       };
 
       if (editingId !== null) {
-        const idx = db.transactions.findIndex(t => t.id === editingId);
+        const idx = db.transactions.findIndex(t => String(t.id) === String(editingId));
         if (idx >= 0) db.transactions[idx] = tx;
         else db.transactions.push(tx);
       } else {
@@ -1403,18 +1604,19 @@
     }
 
     function editTx(id) {
-      const tx = db.transactions.find(t => t.id === id);
+      const tx = db.transactions.find(t => String(t.id) === String(id));
       if (tx) openAddModal(tx);
     }
 
     // ===== DELETE =====
     function askDeleteTx(id) {
-      const tx = db.transactions.find(t => t.id === id);
+      const tx = db.transactions.find(t => String(t.id) === String(id));
       const label = tx ? `${tx.type || ''} - ${tx.person || 'بدون شخص'} - ${tx.date || 'بدون تاریخ'}` : 'این تراکنش';
       showConfirm('🗑️', 'حذف تراکنش', `آیا مطمئن هستید؟\n«${label}» حذف شود؟`, () => {
-        db.transactions = db.transactions.filter(t => t.id !== id);
+        db.transactions = db.transactions.filter(t => String(t.id) !== String(id));
         saveDB();
         renderTransactions();
+        updateFilters();
         showToast('🗑️ تراکنش حذف شد');
       });
     }
@@ -1515,11 +1717,11 @@
           const persons = [...new Set(parsed.map(r => r.person).filter(Boolean))];
 
           document.getElementById('import-summary').innerHTML = `
-        <table class="summary-table">
-          <tr><td>تعداد ردیف</td><td>${parsed.length}</td></tr>
-          <tr><td>مغازه‌ها</td><td>${shops.join('، ')}</td></tr>
-          <tr><td>اشخاص</td><td>${persons.length} نفر</td></tr>
-        </table>`;
+            <table class="summary-table">
+              <tr><td>تعداد ردیف</td><td>${parsed.length}</td></tr>
+              <tr><td>مغازه‌ها</td><td>${shops.join('، ')}</td></tr>
+              <tr><td>اشخاص</td><td>${persons.length} نفر</td></tr>
+            </table>`;
           document.getElementById('import-preview').style.display = 'block';
           showToast(`📋 ${parsed.length} ردیف آماده وارد کردن`);
         } catch (err) {
@@ -1586,6 +1788,25 @@
     loadTheme();
     renderDashboard();
     updateFilters();
+    function toggleCoinType() {
+      const type = document.getElementById('inp-type').value;
+      const group = document.getElementById('coin-type-group');
+      if (['خرید سکه', 'فروش سکه'].includes(type)) {
+        group.style.display = 'block';
+      } else {
+        group.style.display = 'none';
+      }
+    }
+
+    document.getElementById('inp-type').addEventListener('change', toggleCoinType);
+
+    // Override openAddModal to ensure toggle is called
+    const originalOpenModal = openAddModal;
+    openAddModal = function (tx) {
+      originalOpenModal(tx);
+      toggleCoinType();
+    };
+
   </script>
 </body>
 

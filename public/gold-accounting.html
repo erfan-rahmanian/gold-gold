@@ -329,6 +329,69 @@
       color: var(--purple);
     }
 
+    .badge-coin {
+      background: rgba(201, 168, 76, 0.15);
+      color: var(--gold-light);
+      border: 1px solid rgba(201, 168, 76, 0.2);
+    }
+
+    .badge-melt {
+      background: rgba(224, 142, 85, 0.15);
+      color: #E89E7A;
+    }
+
+    /* CALCULATOR */
+    .calc-card {
+      background: linear-gradient(135deg, var(--surface), var(--surface2));
+      border: 1px solid var(--gold-dark);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .calc-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 4px;
+      height: 100%;
+      background: var(--gold);
+    }
+
+    .calc-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .calc-result {
+      background: rgba(201, 168, 76, 0.07);
+      border-radius: 8px;
+      padding: 12px;
+      margin-top: 12px;
+      border: 1px dashed var(--gold-dark);
+    }
+
+    .calc-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 6px;
+      font-size: 13px;
+    }
+
+    .calc-val {
+      font-weight: 700;
+      color: var(--gold-light);
+    }
+
+    /* STATS GRID */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
     .badge-doc {
       background: rgba(201, 168, 76, 0.15);
       color: var(--gold-light);
@@ -803,6 +866,29 @@
 
     <!-- DASHBOARD -->
     <div class="page active" id="page-dashboard">
+      <div class="calc-card card">
+        <div class="section-title">🧮 ماشین‌حساب طلا</div>
+        <div class="calc-grid">
+          <div class="form-group">
+            <label class="form-label">وزن (گرم)</label>
+            <input type="number" class="form-input" id="calc-weight" placeholder="0.000" oninput="runCalc()">
+          </div>
+          <div class="form-group">
+            <label class="form-label">عیار (واحد)</label>
+            <input type="number" class="form-input" id="calc-karat" value="750" placeholder="750" oninput="runCalc()">
+          </div>
+          <div class="form-group full">
+            <label class="form-label">قیمت هر گرم ۱۸ (ریال)</label>
+            <input type="number" class="form-input" id="calc-price" placeholder="قیمت روز..." oninput="runCalc()">
+          </div>
+        </div>
+        <div class="calc-result" id="calc-res-box">
+          <div class="calc-row"><span>ارزش کل:</span><span class="calc-val" id="res-total">-</span></div>
+          <div class="calc-row"><span>وزن ۷۵۰:</span><span id="res-750">-</span></div>
+          <div class="calc-row"><span>وزن ۱۰۰۰ (آبشده):</span><span id="res-1000">-</span></div>
+        </div>
+      </div>
+
       <div class="section-title">خلاصه کل</div>
       <div class="stats-grid" id="overview-stats"></div>
       <div class="section-title">به تفکیک مغازه</div>
@@ -820,10 +906,13 @@
         </select>
         <select class="filter-select" id="filter-type" onchange="renderTransactions()">
           <option value="">همه انواع</option>
-          <option value="خرید">خرید</option>
-          <option value="فروش">فروش</option>
-          <option value="دریافت">دریافت</option>
-          <option value="پرداخت">پرداخت</option>
+          <option value="خرید">خرید طلا</option>
+          <option value="فروش">فروش طلا</option>
+          <option value="خرید سکه">خرید سکه</option>
+          <option value="فروش سکه">فروش سکه</option>
+          <option value="آبشده">آبشده</option>
+          <option value="دریافت">دریافت وجه</option>
+          <option value="پرداخت">پرداخت وجه</option>
           <option value="سند حسابداری">سند حسابداری</option>
         </select>
       </div>
@@ -920,11 +1009,25 @@
         <div class="form-group">
           <label class="form-label">نوع تراکنش *</label>
           <select class="form-select" id="inp-type">
-            <option value="خرید">خرید</option>
-            <option value="فروش">فروش</option>
-            <option value="دریافت">دریافت</option>
-            <option value="پرداخت">پرداخت</option>
+            <option value="خرید">خرید طلا</option>
+            <option value="فروش">فروش طلا</option>
+            <option value="خرید سکه">خرید سکه</option>
+            <option value="فروش سکه">فروش سکه</option>
+            <option value="آبشده">آبشده</option>
+            <option value="دریافت">دریافت وجه/طلا</option>
+            <option value="پرداخت">پرداخت وجه/طلا</option>
             <option value="سند حسابداری">سند حسابداری</option>
+          </select>
+        </div>
+        <div class="form-group" id="coin-type-group" style="display:none">
+          <label class="form-label">نوع سکه *</label>
+          <select class="form-select" id="inp-coin-type">
+            <option value="تمام (امامی)">تمام (امامی)</option>
+            <option value="تمام (بهار آزادی)">تمام (بهار آزادی)</option>
+            <option value="نیم سکه">نیم سکه</option>
+            <option value="ربع سکه">ربع سکه</option>
+            <option value="سکه گرمی">سکه گرمی</option>
+            <option value="پارسیان">پارسیان</option>
           </select>
         </div>
         <div class="form-group">
@@ -1106,10 +1209,27 @@
       const map = {
         'خرید': 'badge-buy', 'فروش': 'badge-sell',
         'دریافت': 'badge-recv', 'پرداخت': 'badge-pay',
+        'خرید سکه': 'badge-coin', 'فروش سکه': 'badge-coin',
+        'آبشده': 'badge-melt',
         'سند حسابداری': 'badge-doc',
       };
       const cls = map[t] || 'badge-doc';
       return `<span class="badge ${cls}">${t || '-'}</span>`;
+    }
+
+    function runCalc() {
+      const w = parseFloat(document.getElementById('calc-weight').value) || 0;
+      const k = parseFloat(document.getElementById('calc-karat').value) || 750;
+      const p = parseFloat(document.getElementById('calc-price').value) || 0;
+
+      const standardK = 750;
+      const weight750 = (w * k) / standardK;
+      const weight1000 = (w * k) / 1000;
+      const totalRial = weight750 * p;
+
+      document.getElementById('res-total').textContent = totalRial > 0 ? fmtRial(totalRial) : '-';
+      document.getElementById('res-750').textContent = weight750 > 0 ? weight750.toFixed(3) + ' گرم' : '-';
+      document.getElementById('res-1000').textContent = weight1000 > 0 ? weight1000.toFixed(3) + ' گرم' : '-';
     }
 
     function showToast(msg) {
@@ -1245,7 +1365,12 @@
     <tr>
       <td>${tx.date || '-'}</td>
       <td><span style="color:var(--gold-light)">${tx.shopName || '-'}</span></td>
-      <td>${typeBadge(tx.type)}</td>
+      <td>
+        <div style="display:flex;flex-direction:column">
+          <span>${typeBadge(tx.type)}</span>
+          ${tx.coinType ? `<small style="font-size:10px;color:var(--text-muted)">${tx.coinType}</small>` : ''}
+        </div>
+      </td>
       <td>${tx.person || '-'}</td>
       <td style="max-width:120px;overflow:hidden;text-overflow:ellipsis">${tx.description || '-'}</td>
       <td class="negative">${tx.badGold ? (+tx.badGold).toFixed(3) : '-'}</td>
@@ -1409,7 +1534,9 @@
       editingId = tx ? tx.id : null;
       document.getElementById('modal-title').textContent = tx ? 'ویرایش تراکنش' : 'ثبت تراکنش جدید';
       document.getElementById('inp-type').value = tx?.type || 'خرید';
+      document.getElementById('inp-coin-type').value = tx?.coinType || 'تمام (امامی)';
       document.getElementById('inp-shop').value = tx?.shopName || '';
+      toggleCoinType(); // Update visibility
       document.getElementById('inp-person').value = tx?.person || '';
       document.getElementById('inp-date').value = tx?.date || currentJalaliDate();
       document.getElementById('inp-bad-gold').value = tx?.badGold || '';
@@ -1439,11 +1566,14 @@
       const sellingPrice = parseFloat(document.getElementById('inp-selling').value) || 0;
       const dateInput = (document.getElementById('inp-date').value || '').trim();
       const dateVal = dateInput ? dateInput : currentJalaliDate();
+      const coinType = document.getElementById('inp-coin-type').value;
+      const isCoin = ['خرید سکه', 'فروش سکه'].includes(document.getElementById('inp-type').value);
 
       const tx = {
         id: editingId !== null ? editingId : Date.now(),
         shopName: shop,
         type: document.getElementById('inp-type').value,
+        coinType: isCoin ? coinType : null,
         person: document.getElementById('inp-person').value.trim() || null,
         date: dateVal || null,
         description: document.getElementById('inp-desc').value.trim() || null,
@@ -1658,6 +1788,25 @@
     loadTheme();
     renderDashboard();
     updateFilters();
+    function toggleCoinType() {
+      const type = document.getElementById('inp-type').value;
+      const group = document.getElementById('coin-type-group');
+      if (['خرید سکه', 'فروش سکه'].includes(type)) {
+        group.style.display = 'block';
+      } else {
+        group.style.display = 'none';
+      }
+    }
+
+    document.getElementById('inp-type').addEventListener('change', toggleCoinType);
+
+    // Override openAddModal to ensure toggle is called
+    const originalOpenModal = openAddModal;
+    openAddModal = function (tx) {
+      originalOpenModal(tx);
+      toggleCoinType();
+    };
+
   </script>
 </body>
 
