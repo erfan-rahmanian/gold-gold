@@ -328,11 +328,13 @@ input[type="file"] { display: none; }
 .mb-12 { margin-bottom: 12px; }
 
 .summary-table { width: 100%; border-collapse: collapse; }
-.summary-table td { padding: 8px 12px; border-bottom: 1px solid var(--border); font-size: 13px; }
+.summary-table td { padding: 8px 12px; border-bottom: 1px solid var(--border); font-size: 13px; white-space: normal; word-break: break-word; }
 .summary-table td:first-child { color: var(--text-muted); }
 .summary-table td:last-child { text-align: left; font-weight: 600; }
 /* ensure import preview is responsive on small screens */
 #import-summary { overflow-x: auto; max-width: 100%; }
+/* limit preview height on small screens to avoid overflowing viewport */
+#import-preview { max-height: 60vh; overflow-y: auto; }
 @media (max-width: 480px) { #import-summary table { font-size: 13px; } }
 </style>
 </head>
@@ -620,6 +622,47 @@ function fmtRial(v) {
 function fmtGold(v) {
   if (!v || v === 0) return '-';
   return (+v).toFixed(3) + ' گ';
+}
+
+// ===== JALALI DATE HELPERS =====
+function div(a,b){return Math.floor(a/b);}
+function gregorianToJalali(gy,gm,gd){
+  var g_d_m = [0,31,59,90,120,151,181,212,243,273,304,334];
+  var jy, jm, jd;
+  var gy2 = gy - 1600;
+  var gm2 = gm - 1;
+  var gd2 = gd - 1;
+  var g_day_no = 365*gy2 + Math.floor((gy2+3)/4) - Math.floor((gy2+99)/100) + Math.floor((gy2+399)/400);
+  for (var i=0;i<gm2;i++) g_day_no += g_d_m[i];
+  if (gm2>1 && ((gy%4==0 && gy%100!=0) || (gy%400==0))) g_day_no++;
+  g_day_no += gd2;
+  var j_day_no = g_day_no - 79;
+  var j_np = Math.floor(j_day_no / 12053);
+  j_day_no = j_day_no % 12053;
+  jy = 979 + 33 * j_np + 4 * Math.floor(j_day_no/1461);
+  j_day_no = j_day_no % 1461;
+  if (j_day_no >= 366) {
+    jy += Math.floor((j_day_no-366)/365);
+    j_day_no = (j_day_no-366) % 365;
+  }
+  var jm_days = [31,31,31,31,31,31,30,30,30,30,30,29];
+  for (var i=0;i<11 && j_day_no >= jm_days[i]; i++) j_day_no -= jm_days[i];
+  jm = i+1;
+  jd = j_day_no + 1;
+  return {jy, jm, jd};
+}
+
+function pad2(n){ return String(n).padStart(2,'0'); }
+function toPersianDigits(s){
+  const map = {0:'۰',1:'۱',2:'۲',3:'۳',4:'۴',5:'۵',6:'۶',7:'۷',8:'۸',9:'۹'};
+  return String(s).split('').map(c => (c>='0' && c<='9')? map[c] : c).join('');
+}
+
+function currentJalaliDate(){
+  const d = new Date();
+  const gY = d.getFullYear(), gM = d.getMonth()+1, gD = d.getDate();
+  const j = gregorianToJalali(gY,gM,gD);
+  return `${toPersianDigits(j.jy)}/${toPersianDigits(pad2(j.jm))}/${toPersianDigits(pad2(j.jd))}`;
 }
 
 function typeBadge(t) {
@@ -931,7 +974,7 @@ function openAddModal(tx) {
   document.getElementById('inp-type').value     = tx?.type        || 'خرید';
   document.getElementById('inp-shop').value     = tx?.shopName    || '';
   document.getElementById('inp-person').value   = tx?.person      || '';
-  document.getElementById('inp-date').value     = tx?.date        || '';
+  document.getElementById('inp-date').value     = tx?.date        || currentJalaliDate();
   document.getElementById('inp-bad-gold').value = tx?.badGold     || '';
   document.getElementById('inp-good-gold').value= tx?.goodGold    || '';
   document.getElementById('inp-bad-rial').value = tx?.badRial     || '';
@@ -951,13 +994,14 @@ function closeModal() {
 function saveTransaction() {
   const shop = document.getElementById('inp-shop').value.trim();
   if (!shop) { showToast('⚠️ نام مغازه الزامی است'); return; }
-
   const badGold  = parseFloat(document.getElementById('inp-bad-gold').value)  || 0;
   const goodGold = parseFloat(document.getElementById('inp-good-gold').value) || 0;
   const badRial  = parseFloat(document.getElementById('inp-bad-rial').value)  || 0;
   const goodRial = parseFloat(document.getElementById('inp-good-rial').value) || 0;
   const purchasePrice = parseFloat(document.getElementById('inp-purchase').value) || 0;
   const sellingPrice  = parseFloat(document.getElementById('inp-selling').value)  || 0;
+  const dateInput = (document.getElementById('inp-date').value || '').trim();
+  const dateVal = dateInput ? dateInput : currentJalaliDate();
 
   const tx = {
     id: editingId !== null ? editingId : Date.now(),
@@ -965,6 +1009,7 @@ function saveTransaction() {
     type: document.getElementById('inp-type').value,
     person: document.getElementById('inp-person').value.trim() || null,
     date:   document.getElementById('inp-date').value.trim()   || null,
+    date:   dateVal || null,
     description: document.getElementById('inp-desc').value.trim() || null,
     badGold, goodGold, badRial, goodRial,
     purchasePrice, sellingPrice,
