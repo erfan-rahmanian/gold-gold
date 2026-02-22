@@ -331,6 +331,9 @@ input[type="file"] { display: none; }
 .summary-table td { padding: 8px 12px; border-bottom: 1px solid var(--border); font-size: 13px; }
 .summary-table td:first-child { color: var(--text-muted); }
 .summary-table td:last-child { text-align: left; font-weight: 600; }
+/* ensure import preview is responsive on small screens */
+#import-summary { overflow-x: auto; max-width: 100%; }
+@media (max-width: 480px) { #import-summary table { font-size: 13px; } }
 </style>
 </head>
 <body class="dark">
@@ -783,52 +786,71 @@ function renderTransactions() {
 function renderPersons() {
   const shopF  = document.getElementById('filter-person-shop')?.value || '';
   const search = (document.getElementById('filter-person-search')?.value || '').toLowerCase();
-
-  const map = {};
+  const personsMap = {};
   db.transactions.forEach(tx => {
     const person = tx.person || '(بدون نام)';
     const shop   = tx.shopName || 'نامشخص';
-    if (shopF  && shop !== shopF) return;
+    if (shopF && shop !== shopF) return;
     if (search && !person.toLowerCase().includes(search) && !shop.toLowerCase().includes(search)) return;
-    const key = `${person}||${shop}`;
-    if (!map[key]) map[key] = { person, shop, gold:0, rial:0, profit:0, count:0 };
-    map[key].gold   += (tx.goodGold||0) - (tx.badGold||0);
-    map[key].rial   += (tx.goodRial||0) - (tx.badRial||0);
-    map[key].profit += (tx.profit||0);
-    map[key].count++;
+
+    if (!personsMap[person]) personsMap[person] = { person, gold:0, rial:0, profit:0, count:0, shops: {} };
+    const p = personsMap[person];
+    const g = (tx.goodGold||0) - (tx.badGold||0);
+    const r = (tx.goodRial||0) - (tx.badRial||0);
+    p.gold += g; p.rial += r; p.profit += (tx.profit||0); p.count++;
+    if (!p.shops[shop]) p.shops[shop] = { name: shop, gold:0, rial:0, profit:0, count:0 };
+    p.shops[shop].gold += g; p.shops[shop].rial += r; p.shops[shop].profit += (tx.profit||0); p.shops[shop].count++;
   });
 
-  const persons = Object.values(map).sort((a,b) => b.count - a.count);
+  const persons = Object.values(personsMap).sort((a,b) => b.count - a.count);
   if (persons.length === 0) {
     document.getElementById('persons-list').innerHTML =
       '<div class="empty-state"><div class="empty-icon">👥</div><div>موردی یافت نشد</div></div>';
     return;
   }
 
-  document.getElementById('persons-list').innerHTML = persons.map(p => `
-    <div class="person-card">
-      <div class="person-header">
-        <div>
-          <div class="person-name">👤 ${p.person}</div>
-          <div style="font-size:11px;color:var(--text-muted);margin-top:2px">${p.count} تراکنش</div>
+  document.getElementById('persons-list').innerHTML = persons.map(p => {
+    const shopDetails = Object.values(p.shops).map(s => `
+      <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border)">
+        <div style="display:flex;flex-direction:column">
+          <strong style="font-size:13px">🏪 ${s.name}</strong>
+          <small class="text-muted" style="font-size:11px">${s.count} تراکنش</small>
         </div>
-        <span class="person-shop">🏪 ${p.shop}</span>
-      </div>
-      <div class="person-stats">
-        <div class="person-stat">
-          <div class="person-stat-label">موجودی طلا</div>
-          <div class="person-stat-value ${p.gold>=0?'positive':'negative'}">${p.gold.toFixed(3)}گ</div>
+        <div style="text-align:left">
+          <div style="font-weight:700">${s.gold.toFixed(3)} گ</div>
+          <div style="font-size:12px">${fmtRial(s.rial)}</div>
         </div>
-        <div class="person-stat">
-          <div class="person-stat-label">موجودی ریال</div>
-          <div class="person-stat-value ${p.rial>=0?'positive':'negative'}">${fmtRial(p.rial)}</div>
+      </div>`).join('');
+
+    return `
+      <div class="person-card">
+        <div class="person-header">
+          <div>
+            <div class="person-name">👤 ${p.person}</div>
+            <div style="font-size:11px;color:var(--text-muted);margin-top:2px">${p.count} تراکنش</div>
+          </div>
+          <span class="person-shop">🏷️ مجموع</span>
         </div>
-        <div class="person-stat">
-          <div class="person-stat-label">سود/زیان</div>
-          <div class="person-stat-value ${p.profit>=0?'positive':'negative'}">${fmtRial(p.profit)}</div>
+        <div class="person-stats">
+          <div class="person-stat">
+            <div class="person-stat-label">موجودی طلا (کل)</div>
+            <div class="person-stat-value ${p.gold>=0?'positive':'negative'}">${p.gold.toFixed(3)} گ</div>
+          </div>
+          <div class="person-stat">
+            <div class="person-stat-label">موجودی ریال (کل)</div>
+            <div class="person-stat-value ${p.rial>=0?'positive':'negative'}">${fmtRial(p.rial)}</div>
+          </div>
+          <div class="person-stat">
+            <div class="person-stat-label">سود/زیان (کل)</div>
+            <div class="person-stat-value ${p.profit>=0?'positive':'negative'}">${fmtRial(p.profit)}</div>
+          </div>
         </div>
-      </div>
-    </div>`).join('');
+        <div style="margin-top:10px">
+          <div class="section-title" style="font-size:12px">جزئیات به تفکیک مغازه</div>
+          <div style="background:var(--surface3);padding:10px;border-radius:8px">${shopDetails}</div>
+        </div>
+      </div>`
+  }).join('');
 }
 
 // ===== SHOPS =====
@@ -950,7 +972,7 @@ function saveTransaction() {
   };
 
   if (editingId !== null) {
-    const idx = db.transactions.findIndex(t => t.id === editingId);
+    const idx = db.transactions.findIndex(t => String(t.id) === String(editingId));
     if (idx >= 0) db.transactions[idx] = tx;
     else db.transactions.push(tx);
   } else {
@@ -971,18 +993,19 @@ function saveTransaction() {
 }
 
 function editTx(id) {
-  const tx = db.transactions.find(t => t.id === id);
+  const tx = db.transactions.find(t => String(t.id) === String(id));
   if (tx) openAddModal(tx);
 }
 
 // ===== DELETE =====
 function askDeleteTx(id) {
-  const tx = db.transactions.find(t => t.id === id);
+  const tx = db.transactions.find(t => String(t.id) === String(id));
   const label = tx ? `${tx.type||''} - ${tx.person||'بدون شخص'} - ${tx.date||'بدون تاریخ'}` : 'این تراکنش';
   showConfirm('🗑️', 'حذف تراکنش', `آیا مطمئن هستید؟\n«${label}» حذف شود؟`, () => {
-    db.transactions = db.transactions.filter(t => t.id !== id);
+    db.transactions = db.transactions.filter(t => String(t.id) !== String(id));
     saveDB();
     renderTransactions();
+    updateFilters();
     showToast('🗑️ تراکنش حذف شد');
   });
 }
