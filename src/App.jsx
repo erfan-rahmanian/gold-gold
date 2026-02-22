@@ -27,18 +27,30 @@ export default function App() {
         containerRef.current.innerHTML = doc.body.innerHTML
       }
 
-      // inject scripts (both src and inline)
+      // inject scripts in order, waiting for external scripts to load
       const scripts = Array.from(doc.querySelectorAll('script'))
       for (const s of scripts) {
-        const el = document.createElement('script')
+        // skip if script has no content and no src
+        if (!s.src && !s.textContent) continue
         if (s.src) {
-          el.src = s.src
+          // external script: append and wait for load
+          await new Promise((resolve, reject) => {
+            const ext = document.createElement('script')
+            ext.src = s.src
+            ext.async = false
+            ext.setAttribute('data-injected', 'gold-accounting-script')
+            ext.onload = () => { injectedNodes.push(ext); resolve() }
+            ext.onerror = (e) => { injectedNodes.push(ext); console.error('Failed to load', s.src, e); resolve() }
+            document.body.appendChild(ext)
+          })
         } else {
-          el.textContent = s.textContent
+          // inline script: execute immediately after previous externals
+          const inl = document.createElement('script')
+          inl.textContent = s.textContent
+          inl.setAttribute('data-injected', 'gold-accounting-script')
+          document.body.appendChild(inl)
+          injectedNodes.push(inl)
         }
-        el.setAttribute('data-injected', 'gold-accounting-script')
-        document.body.appendChild(el)
-        injectedNodes.push(el)
       }
     }
 
