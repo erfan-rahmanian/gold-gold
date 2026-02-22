@@ -330,7 +330,7 @@ input[type="file"] { display: none; }
 .summary-table { width: 100%; border-collapse: collapse; }
 .summary-table td { padding: 8px 12px; border-bottom: 1px solid var(--border); font-size: 13px; }
 .summary-table td:first-child { color: var(--text-muted); }
-.summary-table td:last-child { text-align: left; font-weight: 600; }
+.summary-table td:last-child { text-align: left; font-weight: 600; word-break: break-word; }
 </style>
 </head>
 <body class="dark">
@@ -604,6 +604,14 @@ function toggleTheme() {
 }
 
 // ===== HELPERS =====
+function getTodayJalali() {
+  return new Intl.DateTimeFormat('fa-IR-u-ca-persian', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  }).format(new Date()).replace(/\//g, '/');
+}
+
 function fmtRial(v) {
   if (!v || v === 0) return '-';
   const abs = Math.abs(v);
@@ -942,7 +950,7 @@ function saveTransaction() {
     shopName: shop,
     type: document.getElementById('inp-type').value,
     person: document.getElementById('inp-person').value.trim() || null,
-    date:   document.getElementById('inp-date').value.trim()   || null,
+    date:   document.getElementById('inp-date').value.trim()   || getTodayJalali(),
     description: document.getElementById('inp-desc').value.trim() || null,
     badGold, goodGold, badRial, goodRial,
     purchasePrice, sellingPrice,
