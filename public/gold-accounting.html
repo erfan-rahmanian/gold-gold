@@ -257,6 +257,12 @@
     }
 
     /* TABLE */
+    .table-wrapper {
+      overflow-x: auto;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+    }
+
     .table-wrapper table {
       min-width: 700px;
     }
@@ -1581,11 +1587,11 @@
           const persons = [...new Set(parsed.map(r => r.person).filter(Boolean))];
 
           document.getElementById('import-summary').innerHTML = `
-        <table class="summary-table">
-          <tr><td>تعداد ردیف</td><td>${parsed.length}</td></tr>
-          <tr><td>مغازه‌ها</td><td>${shops.join('، ')}</td></tr>
-          <tr><td>اشخاص</td><td>${persons.length} نفر</td></tr>
-        </table>`;
+            <table class="summary-table">
+              <tr><td>تعداد ردیف</td><td>${parsed.length}</td></tr>
+              <tr><td>مغازه‌ها</td><td>${shops.join('، ')}</td></tr>
+              <tr><td>اشخاص</td><td>${persons.length} نفر</td></tr>
+            </table>`;
           document.getElementById('import-preview').style.display = 'block';
           showToast(`📋 ${parsed.length} ردیف آماده وارد کردن`);
         } catch (err) {
